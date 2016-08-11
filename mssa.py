@@ -9,7 +9,7 @@ from oceans.ff_tools import lagcorr
 import gpsUtils as gps
 import ssa
 import glob
-from scipy.signal import lfilter
+from scipy.signal import lfilter, filtfilt
 
 def create_network_matrix(network_folder, start, end):
     '''
@@ -85,16 +85,17 @@ def toep_cov(df, M):
     C = np.zeros((L*M,M*L))
     #diagonal blocks
     for i in range(L):
-        q = c[M:2*M-1,(i)*(L+1)]
+        q = c[M-1:2*M-1,(i)*(L+1)]
         Tij = toeplitz(q)
-        C[i*M+1:(i+1)*M,(i)*M+1:(i+1)*M]= Tij
+        C[i*M:(i+1)*M,(i)*M:(i+1)*M]= Tij
     #build all the other blocks
     for i in range(L):
         for j in range(i+1,L):
             q=c[:,(i)*L+j];
-            Tij=toeplitz(q[M:1:-1],q[M:2*M-1]);
-            C[(i)*M+1:(i+1)*M, (j-1)*M+1:j*M]=Tij  # Above diagonal
-            C[(j-1)*M+1:j*M, (i)*M+1:(i+1)*M]=Tij.T # Below diagonal
+            Tij=toeplitz(q[M:0:-1],q[M-1:2*M-1]);
+            print np.shape(Tij)
+            C[(i)*M:(i+1)*M, (j)*M:(j+1)*M]=Tij  # Above diagonal
+            C[(j)*M:(j+1)*M, (i)*M:(i+1)*M]=Tij.T # Below diagonal
     return C
 
 
@@ -134,6 +135,7 @@ def get_PC(rho,M,df,plot=False):
         Ej = np.flipud(Ej)
         for j in range(L):
             a[:,j]= lfilter(Ej[:,j],1,X[:,j],axis = 0 )
+            #a[:,j]= filtfilt(Ej[:,j],1,X[:,j],axis = 0,method = 'pad')
         if L>1:
             A[:,K] = (np.sum(a.T,axis = 0))
         else:
@@ -273,11 +275,11 @@ def rc(E,A,L):
         Ej = Ej.reshape((M,L))
         for i in range(L):    # % Compute the RCs for the j-th EOF/PC pair
             R[:,j*L+i]=lfilter(Ej[:,i],M,A[:,j]);
-
+            #R[:,j*L+i]=filtfilt(Ej[:,i],M,A[:,j],method = 'pad');
     #% Adjust first M-1 rows and last M-1 rows
-    #for i in range(M-1):
-      #R[i,:]=R[i,:]*(M/(i+1))
-      #R[N-1-(i),:]=R[N-1-(i),:]*M/(i+1)
+    for i in range(M-1):
+      R[i,:]=R[i,:]*(M/(i+1.0))
+      R[N-1-(i),:]=R[N-1-(i),:]*M/(i+1)
     Rsum = np.zeros((N,L))
     for j in range(k):
                 Rsum = Rsum+R[:,(j)*L:(j+1)*L]
