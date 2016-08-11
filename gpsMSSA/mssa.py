@@ -40,7 +40,6 @@ def create_Y(df, M):
             Y = embedded matrix
     '''
     for i, c in enumerate(df.columns):
-        print c
         R = list(df[c])
         for u in np.arange(1, M):
             R = np.c_[R, ssa.shift(list(df[c]), u)]
