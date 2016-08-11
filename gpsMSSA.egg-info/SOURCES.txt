@@ -1,6 +1,0 @@
-setup.py
-gpsMSSA.egg-info/PKG-INFO
-gpsMSSA.egg-info/SOURCES.txt
-gpsMSSA.egg-info/dependency_links.txt
-gpsMSSA.egg-info/not-zip-safe
-gpsMSSA.egg-info/top_level.txt
