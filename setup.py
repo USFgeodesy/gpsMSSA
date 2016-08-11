@@ -8,7 +8,7 @@ from setuptools import find_packages
 setup(name='gpsMSSA',
       version='0.1',
       description='Multi Channel Singular Spectrum Analysis',
-      url='https://github.com/USFgeodesy/gpsMSSA.git,
+      url='https://github.com/USFgeodesy/gpsMSSA.git',
       author='Nick Voss',
       author_email= 'nvoss@mail.usf.edu',
       license='MIT',
