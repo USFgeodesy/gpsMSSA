@@ -61,7 +61,7 @@ parts/
 sdist/
 var/
 *.egg-info/
-.installed.cfg
+q.installed.cfg
 *.egg
 
 # PyInstaller
