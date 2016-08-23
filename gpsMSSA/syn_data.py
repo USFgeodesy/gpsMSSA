@@ -146,9 +146,9 @@ class periodSemiAnn(object):
 	'''
 	def __init__(self,t,t0,A3,A4):
 		self.t = t
-		self.t0 = t0
-		self.A3 = A3
-		self.A4 = A4
+		self.t0 = t0import sys
+from distutils.core import setup, import sys
+from distutils.core import setup, Extension
 		self.name = 'periodSemiAnn'
 
 	def semiannual(self):
@@ -235,8 +235,8 @@ def make_syn_df(times,funlist,numChannels):
     columns = ['C'+str(i) for i in range(numChannels)]
     data = np.zeros((len(times),numChannels))
     for i in range(numChannels):
-        noise = np.random.normal(0,1,len(times))
-        data[:,i] = np.add(x,noise)
+        #noise = np.random.normal(0,1,len(times))
+        data[:,i] = x #np.add(x,noise)
     df = pd.DataFrame(data,index=times,columns=columns)
     return df
 

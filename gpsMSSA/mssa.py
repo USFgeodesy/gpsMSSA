@@ -95,6 +95,7 @@ def toep_cov(df, M):
             print np.shape(Tij)
             C[(i)*M:(i+1)*M, (j)*M:(j+1)*M]=Tij  # Above diagonal
             C[(j)*M:(j+1)*M, (i)*M:(i+1)*M]=Tij.T # Below diagonal
+    C = np.dot(C,C.T)/2.0
     return C
 
 
