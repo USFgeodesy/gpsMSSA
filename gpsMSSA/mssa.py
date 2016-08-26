@@ -72,30 +72,28 @@ def toep_cov(df, M):
             y = np.real(np.fft.fftshift(y))
             col = (i)*L+j
             c[:,col]=y[ind]
-    ind = np.arange(2*M+1,0,-1)
-    for i in range(1,L):
-        for j in range(i-1):
+    ind = np.arange(2*M,-1,-1)
+    for i in range(1,L+1):
+        for j in range(i):
             col = (i-1)*L+j
-            colnew = (j)*L+i
-            c[:,col]=c[ind-1,colnew]
-    nrm = np.concatenate((np.arange(N-M,N), np.arange(N,N-M-1,-1)))
-    c = c/np.tile(nrm,(L**2,1)).T
+            colnew = (j)*L+i-1
+            c[:,col]=c[ind,colnew]
+    nrm = np.concatenate((np.arange(N-M,N+1), np.arange(N-1,N-M-1,-1))).T
+    c = c/np.outer(nrm,np.ones((1,L**2),float))
     # build the T covariance matroc bloc by Block
     C = np.zeros((L*M,M*L))
     #diagonal blocks
     for i in range(L):
-        q = c[M-1:2*M-1,(i)*(L+1)]
+        q = c[M-1:2*M-1,(i)*(L)]
         Tij = toeplitz(q)
         C[i*M:(i+1)*M,(i)*M:(i+1)*M]= Tij
     #build all the other blocks
     for i in range(L):
         for j in range(i+1,L):
             q=c[:,(i)*L+j];
-            Tij=toeplitz(q[M:0:-1],q[M-1:2*M-1]);
-            print np.shape(Tij)
+            Tij=toeplitz(q[M-1::-1],q[M-1:2*M-1]);
             C[(i)*M:(i+1)*M, (j)*M:(j+1)*M]=Tij  # Above diagonal
             C[(j)*M:(j+1)*M, (i)*M:(i+1)*M]=Tij.T # Below diagonal
-    C = np.dot(C,C.T)/2.0
     return C
 
 
@@ -127,17 +125,17 @@ def get_PC(rho,M,df,plot=False):
     L = len(df.columns)
     A = np.zeros((len(df),np.shape(rho)[1]))
     a = np.zeros((len(df),len(df.columns)))
-    Ej = np.zeros((M,len(df.columns)))
+    #Ej = np.zeros((M,len(df.columns)))
     for K in range(np.shape(E)[1]):
-        Ej = Ej.flatten()
+        #Ej = Ej.flatten()
         Ej = E[:,K]
         Ej = Ej.reshape((M,len(df.columns)))
         Ej = np.flipud(Ej)
         for j in range(L):
-            a[:,j]= lfilter(Ej[:,j],1,X[:,j],axis = 0 )
+            a[:,j]= lfilter(Ej[:,j],1.0,X[:,j],axis = 0 )
             #a[:,j]= filtfilt(Ej[:,j],1,X[:,j],axis = 0,method = 'pad')
         if L>1:
-            A[:,K] = (np.sum(a.T,axis = 0))
+            A[:,K] = (np.sum(a.T,axis = 0)).T
         else:
             A[:,K] = a
     A = A[M-1:len(df),:]
@@ -286,3 +284,13 @@ def rc(E,A,L):
     return R,Rsum
 def mc_test(minEig):
     return
+
+def bk(df,M):
+    X = df.as_matrix()
+    N,L = np.shape(X)
+    T = np.zeros((N-M+1,M*L))
+    index = np.arange(0,(L-1)*M,M)
+    for i in range(M):
+        T[:,L*(i):L*(i+1)]=X[i:N-M+i+1,:]
+    C = np.dot(T.T,T)/(N-M+1)
+    return C

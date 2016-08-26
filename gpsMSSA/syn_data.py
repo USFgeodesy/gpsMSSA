@@ -15,6 +15,7 @@ pass the objects following into the function object:
 import numpy as np
 import pandas as pd
 import inspect
+import scipy
 
 
 class function(object):
@@ -47,12 +48,16 @@ def model_tseries(times,funList):
       '''
       modeledData = []
       for t in times:
-        for fun in funList:
-    	       fun.t = t
-    	       if fun.name == 'trend' or fun.name == 'periodAnn' or fun.name == 'periodSemiAnn':
-    	         fun.t0 = min(times)
-        fun = function(funList)
-        modeledData.append(compute(fun))
+		  for fun in funList:
+			  fun.t = t
+			  if fun.name == 'trend' or fun.name == 'periodAnn' or fun.name == 'periodSemiAnn':
+				  fun.t0 = min(times)
+			  if fun.name =='periodAnnVar':
+				if (t-times[0])%1.0 < 0.002:
+				   fun.A1  = (np.random.sample())
+				   fun.A2 = (np.random.sample())
+		  fun = function(funList)
+		  modeledData.append(compute(fun))
       return modeledData
 
 class heavy(object):
@@ -135,6 +140,26 @@ class periodAnn(object):
 		y = self.A1*np.cos(2.0*np.pi*(self.t-self.t0)) + self.A2*np.sin(2.0*np.pi*(self.t-self.t0))
 		return y
 
+class periodAnnVar(object):
+	'''
+	annual period
+
+	Attributes:
+		t = time
+		A1 = Annual Cosine Amplitude
+		A2 = Annual Sin Amplitude
+	'''
+	def __init__(self,t,t0,A1,A2):
+		self.t0 = t0
+		self.t 	= t
+		self.A1 = A1
+		self.A2 = A2
+		self.name = 'periodAnnVar'
+
+	def annual(self):
+		y = self.A1*np.cos(2.0*np.pi*(self.t-self.t0)) + self.A2*np.sin(2.0*np.pi*(self.t-self.t0))
+		return y
+
 class periodSemiAnn(object):
 	'''
 	semi-annual period
@@ -146,9 +171,9 @@ class periodSemiAnn(object):
 	'''
 	def __init__(self,t,t0,A3,A4):
 		self.t = t
-		self.t0 = t0import sys
-from distutils.core import setup, import sys
-from distutils.core import setup, Extension
+		self.t0 = t0
+		self.A3 = A3
+		self.A4 = A4
 		self.name = 'periodSemiAnn'
 
 	def semiannual(self):
@@ -240,9 +265,110 @@ def make_syn_df(times,funlist,numChannels):
     df = pd.DataFrame(data,index=times,columns=columns)
     return df
 
-times = np.arange(2012,2016,0.01)
-fun  = 'sse'
-args = [0,2014.0,40.0,3.0]
-funList = []
-funList.append(eval(fun)(*args))
-df = make_syn_df(times,funList,10)
+def f_alpha_gaussian(n, q_d, alpha):
+
+#*****************************************************************************80
+#
+## F_ALPHA_GAUSSIAN generates noise using a Gaussian distribuion.
+#
+#  Discussion:
+#
+#    This function generates a discrete colored noise vector X of size N
+#    with a power spectrum distribution that behaves like 1 / f^ALPHA.
+#    The white noise used in the generation is sampled from a Gaussian
+#    distribution with zero mean and a variance of Q_D.
+#
+#  Licensing:
+#
+#    This code is distributed under the GNU LGPL license.
+#
+#  Modified:
+#
+#    30 March 2011
+#
+#  Author:
+#
+#    Miroslav Stoyanov
+#
+#  Reference:
+#
+#    Jeremy Kasdin,
+#    Discrete Simulation of Colored Noise and Stochastic Processes
+#    and 1/f^a Power Law Noise Generation,
+#    Proceedings of the IEEE,
+#    Volume 83, Number 5, 1995, pages 802-827.
+#
+#    Miroslav Stoyanov, Max Gunzburger, John Burkardt,
+#    Pink Noise, 1/F^Alpha Noise, and Their Effect on Solution
+#    of Differential Equations,
+#    submitted, International Journal for Uncertainty Quantification.
+#
+#  Parameters:
+#
+#    Input, integer N, the number of elements in the discrete noise vector.
+#
+#    Input, real Q_D, the variance of the Gaussian distribution.  A standard
+#    Gaussian distribution has a variance of 1.  The variance is the square
+#    of the standard deviation.
+#
+#    Input, real ALPHA, specifies that the computed noise is to have a
+#    power spectrum that behaves like 1/f^alpha.  Normally 0 <= ALPHA <= 2.
+#
+#    Output, real X(N), the computed discrete noise vector.
+#
+
+#
+#  Set the standard deviation of the white noise.
+#
+    stdev = np.sqrt(np.abs(q_d))
+#
+#  Generate the coefficients.
+#
+    hfa = np.zeros(2 * n)
+    hfa[0] = 1.0
+    for i in range(1,n):
+        hfa[i] = hfa[i-1] * (0.5*alpha + (i-1)) / (i)
+    hfa[n:2*n] = 0.0
+#
+#  Sample the white noise.
+#
+    wfa = stdev*np.random.randn(n)
+#
+#  Pad the array with zeros in anticipation of the FFT process.
+#
+    z = np.zeros(n)
+    wfa = np.append(wfa,z)
+#
+#  Perform the discrete Fourier transforms.
+#
+    fh = np.fft.fft(hfa)
+    fw = np.fft.fft(wfa)
+#
+#  Multiply the two complex vectors.
+#
+  #fw = fw(1:n+1)
+    fh = fh[0:n+1]
+    fw = fw[0:n+1]
+
+    fw = fh*fw
+    #fw = fh.*fw
+#
+#  Scale to match the conventions of the Numerical Recipes FFT code.
+#
+    fw[0]   = fw[0]/2.0
+    fw[:-1] = fw[:-1]/2.0
+#
+#  Pad the array with zeros in anticipation of the FFT process.
+#
+    z = np.zeros(n - 1)
+    fw = np.append(fw,z)
+    #fw = [ fw; z ];
+#
+#  Take the inverse Fourier transform.
+#
+    x = np.fft.ifft(fw)
+#
+#  Only the first half of the inverse Fourier transform is useful.
+#
+    x = 2.0*np.real(x[0:n])
+    return x
