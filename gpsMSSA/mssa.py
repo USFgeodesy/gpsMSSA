@@ -23,12 +23,14 @@ def create_network_matrix(network_folder, start, end):
     for i, f in enumerate(fs):
         print f
         ts = gps.readData(f)
-        sr = ts.ts2pandas(start, end)
+        sr,sr2 = ts.ts2pandas(start, end)
         if i == 0:
             df = sr.to_frame(name =f.split('/')[1])
+            df2 = sr2.to_frame(name =f.split('/')[1])
         else:
             df[f.split('/')[1]] = sr
-    return df
+            df2[f.split('/')[1]] = sr2
+    return df,df2
 
 def create_Y(df, M):
     '''

@@ -76,11 +76,12 @@ class timeseries(object):
           #sr = sr.reindex(index = times)
           #sr = sr - sr.mean()
           #sr = pd.Series(mlab.detrend_linear(sr.values.T[0]),index = sr.index)
+          sr2 = sr 
           for i,s in enumerate(sr.values):
               if np.isnan(s):
                   sr.values[i] = np.random.normal(scale = np.std(sr))
-
-          return sr #,times
+          
+          return sr,sr2 #,times
 
       def plot(self):
           plt.errorbar(self.times, self.location, yerr= self.uncertainty)
