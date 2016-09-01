@@ -4,13 +4,13 @@ Multi-variate single spectrum analysis for GPS network
 
 import numpy as np
 import matplotlib.pylab as plt
-from scipy.linalg import toeplitz
+from scipy.linalg import toeplitz,blas
 from oceans.ff_tools import lagcorr
 import gpsUtils as gps
 import ssa
 import glob
 from scipy.signal import lfilter, filtfilt
-
+from scipy import sparse
 def create_network_matrix(network_folder, start, end):
     '''
     parse network folder to make network matrix
@@ -49,7 +49,9 @@ def create_Y(df, M):
             Y = R
         else:
             Y = np.c_[Y, R]
-    C = np.dot(Y.T, Y) / len(df)
+    C = blas.dgemm(alpha=1.0,a=Y.T,b=A.T,trans_b = True)
+    C = C/len(df)
+    #C = np.dot(Y.T, Y) / len(df)
     return Y, C
 
 def toep_cov(df, M):
@@ -104,7 +106,8 @@ def get_eigen(C, plot = False):
     '''
     return eigenvalues and eigenvectors of C
     '''
-    lamb, rho = np.linalg.eig(C)
+    lamb, rho = sparse.linalg.eigs(C,k = 500)
+
     idx = lamb.argsort()[::-1]
     rho = rho[:, idx]
     lamb = lamb[idx]
@@ -294,5 +297,20 @@ def bk(df,M):
     index = np.arange(0,(L-1)*M,M)
     for i in range(M):
         T[:,L*(i):L*(i+1)]=X[i:N-M+i+1,:]
-    C = np.dot(T.T,T)/(N-M+1)
+    #T = sparse.bsr_matrix(T)
+    print 'T matrix made'
+    print T.nbytes
+    print np.shape(T)
+    T = np.asfortranarray(T)
+    print 'computing'
+    print T.flags
+    C = blas.sgemm(alpha=1.0,a=T.T,b=T.T,trans_b = True)
+    print 'normalizing'
+    C = C/(N-M+1)
+    #C = np.dot(T.T,T)/(N-M+1)
+    #print 'computing'
+    #C = T.transpose()*(T)
+    #C = T.transpose()*(T)/(N-M+1)
+    #print 'normalizing'
+    #C = C/(N-M+1)
     return C
