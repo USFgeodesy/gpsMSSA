@@ -15,7 +15,16 @@ def create_network_matrix(network_folder, start, end):
     '''
     parse network folder to make network matrix
     GPS1Lat GPS1Lon GPS1Vert GPS2Lat ...
-    all time series will be same length and be filled, and zscored
+    all time series will be same length and be filled
+    inputs:
+	network_folder = single folder with all the gps data
+	start = start time in decimal years
+	end = end time in decimal years
+    outputs:
+	df = dataframe of GPS data that has been cented and filled so 
+		that they are all the same length
+        df2 = dataframe containing nan values for later reference of what
+		was filled. 
     '''
 
     #loop through directory
@@ -304,9 +313,8 @@ def bk(df,M):
     T = np.asfortranarray(T)
     print 'computing'
     print T.flags
-    C = blas.sgemm(alpha=1.0,a=T.T,b=T.T,trans_b = True)
+    C = blas.sgemm(alpha=1.0,a=T.T,b=T.T,trans_b = True)/(N-M+1)
     print 'normalizing'
-    C = C/(N-M+1)
     #C = np.dot(T.T,T)/(N-M+1)
     #print 'computing'
     #C = T.transpose()*(T)
