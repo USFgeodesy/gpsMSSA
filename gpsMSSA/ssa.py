@@ -7,7 +7,48 @@ import matplotlib.pyplot as plt
 
 from scipy.linalg import toeplitz
 
-from oceans.ff_tools import lagcorr
+def lagcorr(x, y, M=None):
+    """
+    Compute lagged correlation between two series.
+    Follow emery and Thomson book "summation" notation.
+
+    Parameters
+    ----------
+    y : array
+        time-series
+    y : array
+        time-series
+    M : integer
+        number of lags
+
+    Returns
+    -------
+    Cxy : array
+          normalized cross-correlation function
+
+    Examples
+    --------
+    TODO: Implement Emery and Thomson example.
+
+    """
+
+    x, y = list(map(np.asanyarray, (x, y)))
+
+    if not M:
+        M = x.size
+
+    N = x.size
+    Cxy = np.zeros(M)
+    x_bar, y_bar = x.mean(), y.mean()
+
+    for k in range(0, M, 1):
+        a = 0.
+        for i in range(N - k):
+            a = a + (y[i] - y_bar) * (x[i + k] - x_bar)
+
+        Cxy[k] = 1. / (N - k) * a
+
+    return Cxy / (np.std(y) * np.std(x))
 
 def shift(arr, n, order='forward'):
     '''

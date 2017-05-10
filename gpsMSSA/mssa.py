@@ -5,12 +5,55 @@ Multi-variate single spectrum analysis for GPS network
 import numpy as np
 import matplotlib.pylab as plt
 from scipy.linalg import toeplitz,blas
-from oceans.ff_tools import lagcorr
+
 import gpsUtils as gps
 import ssa
 import glob
 from scipy.signal import lfilter, filtfilt
 from scipy import sparse
+
+def lagcorr(x, y, M=None):
+    """
+    Compute lagged correlation between two series.
+    Follow emery and Thomson book "summation" notation.
+
+    Parameters
+    ----------
+    y : array
+        time-series
+    y : array
+        time-series
+    M : integer
+        number of lags
+
+    Returns
+    -------
+    Cxy : array
+          normalized cross-correlation function
+
+    Examples
+    --------
+    TODO: Implement Emery and Thomson example.
+
+    """
+
+    x, y = list(map(np.asanyarray, (x, y)))
+
+    if not M:
+        M = x.size
+
+    N = x.size
+    Cxy = np.zeros(M)
+    x_bar, y_bar = x.mean(), y.mean()
+
+    for k in range(0, M, 1):
+        a = 0.
+        for i in range(N - k):
+            a = a + (y[i] - y_bar) * (x[i + k] - x_bar)
+
+        Cxy[k] = 1. / (N - k) * a
+
+    return Cxy / (np.std(y) * np.std(x))
 def create_network_matrix(network_folder, start, end):
     '''
     parse network folder to make network matrix
@@ -21,10 +64,10 @@ def create_network_matrix(network_folder, start, end):
 	start = start time in decimal years
 	end = end time in decimal years
     outputs:
-	df = dataframe of GPS data that has been cented and filled so 
+	df = dataframe of GPS data that has been cented and filled so
 		that they are all the same length
         df2 = dataframe containing nan values for later reference of what
-		was filled. 
+		was filled.
     '''
 
     #loop through directory
