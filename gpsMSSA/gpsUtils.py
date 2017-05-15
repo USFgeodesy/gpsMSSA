@@ -58,6 +58,30 @@ class timeseries(object):
 
       def get_uncertainty(self):
 	        return self.uncertianty
+      def ts2pandsnodetrend(self,start,end):
+                    '''
+                    convert time series object to pandas series
+                    '''
+                    #self.location = stats.zscore(self.location)
+                    sr = pd.Series((self.location),[decimal2datetime(time) for time in self.times], name = self.component)
+                    sr = sr.reset_index().drop_duplicates(subset='index', keep='last').set_index('index')
+                    sr = sr[pd.to_datetime(decimal2datetime(start)).date():pd.to_datetime(decimal2datetime(end)).date()]
+                    sr = pd.Series(sr.values.T[0],index = sr.index)
+                    times = pd.date_range(pd.to_datetime(decimal2datetime(start)), pd.to_datetime(decimal2datetime(end)))
+                    sr = sr.reindex(index = times)
+                    #sr = sr.dropna()
+                    #sr = pd.Series(sr.get_values(),sr.index)
+
+                    #times = pd.date_range(pd.to_datetime(decimal2datetime(start)), pd.to_datetime(decimal2datetime(end)))
+                    #sr = sr.reindex(index = times)
+                    #sr = sr - sr.mean()
+                    #sr = pd.Series(mlab.detrend_linear(sr.values.T[0]),index = sr.index)
+                    sr2 = sr.copy()
+                    for i,s in enumerate(sr.values):
+                        if np.isnan(s):
+                            sr.values[i] = np.random.normal(scale = np.std(sr))
+
+                    return sr,sr2 #,times
       def ts2pandas(self,start,end):
           '''
           convert time series object to pandas series
@@ -80,7 +104,7 @@ class timeseries(object):
           for i,s in enumerate(sr.values):
               if np.isnan(s):
                   sr.values[i] = np.random.normal(scale = np.std(sr))
-          
+
           return sr,sr2 #,times
 
       def plot(self):

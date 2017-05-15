@@ -54,7 +54,7 @@ def lagcorr(x, y, M=None):
         Cxy[k] = 1. / (N - k) * a
 
     return Cxy / (np.std(y) * np.std(x))
-def create_network_matrix(network_folder, start, end):
+def create_network_matrix(network_folder, start, end,detrend=True):
     '''
     parse network folder to make network matrix
     GPS1Lat GPS1Lon GPS1Vert GPS2Lat ...
@@ -75,7 +75,10 @@ def create_network_matrix(network_folder, start, end):
     for i, f in enumerate(fs):
         print f
         ts = gps.readData(f)
-        sr,sr2 = ts.ts2pandas(start, end)
+        if detrend==False:
+            sr,sr2 = ts.ts2pandsnodetrend(start,end)
+        else:
+            sr,sr2 = ts.ts2pandas(start, end)
         if i == 0:
             df = sr.to_frame(name =f.split('/')[1])
             df2 = sr2.to_frame(name =f.split('/')[1])
